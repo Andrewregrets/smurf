@@ -1,6 +1,3 @@
-	#ifndef __SMURF_H__
-#define __SMURF_H__
-
 #ifdef __linux__
 #include <unistd.h>
 #include <stdbool.h>
@@ -33,14 +30,6 @@ typedef int SOCKET;
 #include <time.h>
 #include <errno.h>
 #include <Mstcpip.h>
-
-#if _MSC_VER >= 1800
-#include <stdbool.h>
-#else
-typedef char	_Bool;
-#define	true	1
-#define	false	0
-#endif
 
 #pragma comment (lib, "ws2_32.lib")
 #pragma comment (lib, "User32.lib")
@@ -78,18 +67,13 @@ struct icmphdr
 		{
 			uint16_t id;
 			uint16_t sequence;
-
 		} echo;
 		uint32_t gateway;
 	} un;
 };
-//362
 #endif
 
 
 void die(char *reason, int code);
-uint16_t calcOnesComplement(uint8_t *data, uint32_t len);
+uint16_t calculateChecksum(uint8_t *data, uint32_t len);
 void cleanup();
-_Bool smurf(SOCKET sock, uint32_t dest_addr, uint32_t src_addr, uint16_t data_length);
-uint32_t generate_ip_by_subnet_mask(uint32_t subnet, uint32_t mask, uint32_t prev_ip);
-#endif
